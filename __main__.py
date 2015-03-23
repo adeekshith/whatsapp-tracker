@@ -37,8 +37,8 @@ def writeToDatabase(value):
 	return
 
 def checkIfOnlineFromExtractedtext(extractedText, accuracy=0.5):
-	score = 0 # Initializing
-	maxScore = 0 # Initializing. Not actual max score
+	score = 0.0 # Initializing
+	maxScore = 0.0 # Initializing. Not actual max score
 
 	# Test 1 using OCR character matching
 	thisScoreWeight = 1
@@ -80,11 +80,9 @@ if __name__ == "__main__":
 	while True:
 		capturedIm = captureScreenArea(pos_x,pos_y,length_x,length_y)
 		extractedText = pytesseract.image_to_string(capturedIm)
-		print extractedText
-		print extractedText.split('\n')
-		print len(extractedText.split('\n'))
-		if "anllne" in extractedText or "anlme" in extractedText or "online" in extractedText:
-			print extractedText
+		print extractedText # Debug
+		if checkIfOnlineFromExtractedtext(extractedText, accuracy = 0.3)== True:
+			print extractedText # Debug
 			print "Is online"
 			foundOnline = True
 			sleepDelay = sleepDelayWhenFoundOnline
