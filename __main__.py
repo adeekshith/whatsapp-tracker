@@ -36,7 +36,7 @@ def writeToDatabase(value):
 	fo.close()
 	return
 
-def checkIfOnlineFromExtractedtext(extractedText, accuracy=0.5):
+def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
 	score = 0.0 # Initializing
 	maxScore = 0.0 # Initializing. Not actual max score
 
@@ -56,7 +56,7 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracy=0.5):
 		score += thisScoreWeight
 
 	isOnlineAccuracy = score/maxScore
-	if isOnlineAccuracy >= accuracy:
+	if isOnlineAccuracy >= accuracyThreshold:
 		return True
 	else:
 		return False
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 		capturedIm = captureScreenArea(pos_x,pos_y,length_x,length_y)
 		extractedText = pytesseract.image_to_string(capturedIm)
 		print extractedText # Debug
-		if checkIfOnlineFromExtractedtext(extractedText, accuracy = 0.3)== True:
+		if checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)== True:
 			print extractedText # Debug
 			print "Is online"
 			foundOnline = True
