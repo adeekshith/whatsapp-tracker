@@ -91,6 +91,7 @@ if __name__ == "__main__":
 	while True:
 		presentTimeInterval = quantizedTime(timeInterval)
 		if previousTimeInterval != presentTimeInterval:
+			print "Interval Changed" # Debug
 			writeToDatabase(startTimeForThisInterval, numberOfTimesOnline)
 			numberOfTimesOnline = 0 # Reinitializing
 			previousTimeInterval = presentTimeInterval
