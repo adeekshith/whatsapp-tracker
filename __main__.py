@@ -24,14 +24,18 @@ import pytesseract
 import time
 import datetime
 
+databaseFileName = "online.csv"
+
 def captureScreenArea(pos_x, pos_y, length_x, length_y):
 	im=ImageGrab.grab(bbox=(pos_x, pos_y, pos_x+length_x, pos_y+length_y)) # X1,Y1,X2,Y2
 	return im
 
-def writeToDatabase(value):
+def writeToDatabase(localtime, value):
 	# Open a file
-	fo = open("online.txt", "ab")
-	fo.write( str(datetime.datetime.now())+","+"\n");
+	fo = open(databaseFileName, "ab")
+	#localtime = time.localtime(time.time())
+	timeFormatted = str(localtime.tm_year)+","+str(localtime.tm_mon)+","+str(localtime.tm_mday)+","+str(localtime.tm_hour)+","+str(localtime.tm_min)+","+str(localtime.tm_sec);
+	fo.write( timeFormatted+","+str(value)+"\n");
 	# Close opend file
 	fo.close()
 	return
@@ -61,6 +65,10 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
 	else:
 		return False
 
+def quantizedTime(intervalMinutes):
+	localtime = time.localtime(time.time())
+	return int(localtime.tm_min/intervalMinutes)
+
 if __name__ == "__main__":
 	# Initializing
 	
@@ -70,29 +78,30 @@ if __name__ == "__main__":
 	length_x = 200
 	length_y = 50
 
-	# Declaring flags and variables and initialize to default values
-	foundOnline = False
-	defaultSleepDelay = 1
-	sleepDelayWhenFoundOnline = 30
-	sleepDelay = defaultSleepDelay
+	# Declaring flags, variables and initializing to default values
+	sleepDelay = 1 # Constant
+	timeInterval = 10 # Constant: Time Interval in minutes
+	numberOfTimesOnline = 0 # Initializing
+	startTimeForThisInterval = time.localtime(time.time())
+	previousStateIsOnline = False
+	presentStateIsOnline = False
+	previousTimeInterval = quantizedTime(timeInterval)
 
 	# Looping continuously to monitor
 	while True:
+		presentTimeInterval = quantizedTime(timeInterval)
+		if previousTimeInterval != presentTimeInterval:
+			writeToDatabase(startTimeForThisInterval, numberOfTimesOnline)
+			numberOfTimesOnline = 0 # Reinitializing
+			previousTimeInterval = presentTimeInterval
+			startTimeForThisInterval = time.localtime(time.time())
 		capturedIm = captureScreenArea(pos_x,pos_y,length_x,length_y)
 		extractedText = pytesseract.image_to_string(capturedIm)
 		print extractedText # Debug
-		if checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)== True:
-			print extractedText # Debug
-			print "Is online"
-			foundOnline = True
-			sleepDelay = sleepDelayWhenFoundOnline
-			# Open a file
-			fo = open("online.txt", "ab")
-			fo.write( str(datetime.datetime.now())+","+"\n");
-			# Close opend file
-			fo.close()
-		else:
-			foundOnline = False
-			sleepDelay = defaultSleepDelay
-		#capturedIm.show()
+		presentStateIsOnline = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
+		if presentStateIsOnline == True:
+			numberOfTimesOnline +=1
+
+		#capturedIm.show() # Debug
+		# Induce delay between each check
 		time.sleep(sleepDelay)
