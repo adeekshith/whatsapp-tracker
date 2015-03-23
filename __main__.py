@@ -28,6 +28,39 @@ def captureScreenArea(pos_x, pos_y, length_x, length_y):
 	im=ImageGrab.grab(bbox=(pos_x, pos_y, pos_x+length_x, pos_y+length_y)) # X1,Y1,X2,Y2
 	return im
 
+def writeToDatabase(value):
+	# Open a file
+	fo = open("online.txt", "ab")
+	fo.write( str(datetime.datetime.now())+","+"\n");
+	# Close opend file
+	fo.close()
+	return
+
+def checkIfOnlineFromExtractedtext(extractedText, accuracy=0.5):
+	score = 0 # Initializing
+	maxScore = 0 # Initializing. Not actual max score
+
+	# Test 1 using OCR character matching
+	thisScoreWeight = 1
+	maxScore += thisScoreWeight
+	if "anllne" in extractedText or "anlme" in extractedText or "online" in extractedText:
+		score += thisScoreWeight
+
+	# Test 2 which assumes that the second line 
+	# in the extracted OCR text is "online"
+	# This method works when the OCR algorithm 
+	# does not perform well. This is usually the case.
+	thisScoreWeight = 2
+	maxScore += thisScoreWeight
+	if len(extractedText.split('\n'))>1:
+		score += thisScoreWeight
+
+	isOnlineAccuracy = score/maxScore
+	if isOnlineAccuracy >= accuracy:
+		return True
+	else:
+		return False
+
 if __name__ == "__main__":
 	# Initializing
 	
@@ -47,7 +80,9 @@ if __name__ == "__main__":
 	while True:
 		capturedIm = captureScreenArea(pos_x,pos_y,length_x,length_y)
 		extractedText = pytesseract.image_to_string(capturedIm)
-		#print extractedText
+		print extractedText
+		print extractedText.split('\n')
+		print len(extractedText.split('\n'))
 		if "anllne" in extractedText or "anlme" in extractedText or "online" in extractedText:
 			print extractedText
 			print "Is online"
