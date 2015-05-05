@@ -13,3 +13,9 @@ So, for this to work, you may have to adjust the screen capturing coordinates ac
 ## What is it useful for?
 It depends upon how you use it but once you grab the data, you will start finding a way to use that.
 Let me warn you not to use this to invade anyone's privacy and use it in your legal limits. I am not resposible for how you use it.
+
+## Limitations
+- Each instance can track only single user at a time
+- Each instance needs a dedicated machine or virtual machine to run
+- It uses screen capturing and so it needs to be configured separately for different resolutions.
+- No good documentation... author is lazy/busy.
