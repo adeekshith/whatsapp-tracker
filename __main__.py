@@ -18,11 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pyscreenshot as ImageGrab
-import Image
+import pyscreenshot as ImageGrab #pip install pyscreenshot
+from PIL import Image #pip install image
 import pytesseract
 import time
-import datetime
+from datetime import datetime
 
 databaseFileName = "online.csv"
 
