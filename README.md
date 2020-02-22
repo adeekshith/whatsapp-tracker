@@ -21,4 +21,4 @@ Let me warn you not to use this to invade anyone's privacy and use it in your le
 
 ## Windows Preconditions
  - Install Tesseract for Windows and add to PATH env (https://github.com/UB-Mannheim/tesseract/wiki)
- - Install Python environment and pip install missing modules (image, pyscreenshot, pytesseract)
+ - Install Python environment (3.8.1 tested here) and pip install missing modules (image, pyscreenshot, pytesseract)
