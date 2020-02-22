@@ -71,7 +71,7 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
         return True
     else:
         return False
-        
+    
 if __name__ == "__main__":
     # Script start
     
@@ -119,16 +119,18 @@ if __name__ == "__main__":
                 print(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S: ") + extractedText + " " + str(targetOnlineCount) + "/" + str(targetCheckedCount))
             
             writeToDatabase(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText, str(targetOnlineCount), str(targetCheckedCount))
-            targetOnlineCount = 0   
-            targetCheckedCount = 0            
-            startTime = runTime
+            targetOnlineCount = 0
+            targetCheckedCount = 0 
+            startTime = runTime  
             # remember current time to restart loop till data gets saved again (timeInterval)
             timeTargetSeenOn = datetime.now()             
         
         if currentTarget != extractedText:
             currentTarget = extractedText
-            targetOnlineCount = 0 # reset counters after target was switched
-            targetCheckedCount = 0            
+            # reset counters and timer after target was switched
+            targetOnlineCount = 0
+            targetCheckedCount = 0 
+            startTime = runTime          
             print("Start online tracking of target " + currentTarget + " ...")
         
         # sleep between each check
