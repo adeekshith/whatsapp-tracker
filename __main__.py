@@ -35,12 +35,12 @@ def captureScreenArea(pos_x, pos_y, length_x, height_y):
     im=ImageGrab.grab(bbox=(pos_x, pos_y, pos_x + length_x, pos_y + height_y)) # X1,Y1,X2,Y2
     return im
 
-def writeToDatabase(localtime, value):
+def writeToDatabase(localtime, targetName, secondsCnt):
     # Open file handle with mode append
     fo = open(dbFile, "a")
     
     #concatenate timestamp, target infos and append to file
-    res = localtime + ";" + str(value) +"\n" #csv format
+    res = localtime + ";" + str(targetName) + ";" + secondsCnt + "\n" #csv format
     fo.write(res);
     
     # Close file handle
@@ -75,7 +75,7 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
 if __name__ == "__main__":
     # Script start
     
-    # CONFIG: Screen dimentions to be captured (modify here)
+    # CONFIG: Screen dimensions to be captured (modify here)
     pos_x = 1350        #edit only this if you like top right alignment of WhatsApp Web Application
     pos_y = 35          #aligned top at 1920x1080
     length_x = 400      #length should be big enough for some tolerance in alignment
@@ -114,9 +114,8 @@ if __name__ == "__main__":
             extractedText = extractedText.replace('\n','')            
             
             if secondsOn != 0:
-                print("Save Data...") # Debug
                 print(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S: ") + extractedText + " " + str(secondsOn))
-                writeToDatabase(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText + " " + str(secondsOn))
+                writeToDatabase(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText, str(secondsOn))
                 secondsOn = 0
                 
             startTime = runTime
