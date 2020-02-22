@@ -1,5 +1,5 @@
-# WhatsApp tracker
-# Author: Deekshith Allamaneni
+# WhatsApp Web Online Tracker
+# Author: Deekshith Allamaneni / ChuckNorrison
 # Email: dkhhy.d@gmail.com
 # Website: https://github.com/adeekshith/whatsapp-tracker
 
@@ -7,13 +7,7 @@
 # - Install Tesseract for Windows and add to PATH env (https://github.com/UB-Mannheim/tesseract/wiki)
 # - Install Python environment and pip install missing modules (image, pyscreenshot, pytesseract)
 
-# Version: 2 (ChuckNorrison)
-# - modifi libs to support windows python environment
-# - timestamp formatted logs with Name and interval count
-# - file open not as binary
-# - Setup your screenposition X and Y at profile pic (pos_x=+50px) of selected chat (use capturedIm.show() to watch screenshots)
-
-# WhatsApp tracker monitors WhatsApp users online timings and stores them to database.
+# WhatsApp Web Online Tracker monitors WhatsApp users online timings and stores them to database.
 # Copyright (C) 2015  Deekshith Allamaneni 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -81,7 +75,7 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
 if __name__ == "__main__":
     # Script start
     
-    # CONFIG: Screen dimensions to be captured (modify here)
+    # CONFIG: Screen dimentions to be captured (modify here)
     pos_x = 1350        #edit only this if you like top right alignment of WhatsApp Web Application
     pos_y = 35          #aligned top at 1920x1080
     length_x = 400      #length should be big enough for some tolerance in alignment
@@ -89,9 +83,9 @@ if __name__ == "__main__":
     
     # Debug CONFIG: show screenshot of capture area once script gets started
     capturedIm = captureScreenArea(pos_x,pos_y,length_x,height_y)
-    extractedText = pytesseract.image_to_string(capturedIm)
+    currentTarget = pytesseract.image_to_string(capturedIm)
     capturedIm.show() 
-    print("Start online tracking of target " + extractedText + " ...")
+    print("Start online tracking of target " + currentTarget + " ...")
 
     timeInterval = 60 # seconds to save data to db (csv file atm)
     
@@ -101,7 +95,15 @@ if __name__ == "__main__":
     startTime = datetime.now()
 
     # Looping continuously to monitor
-    while True:        
+    while True: 
+        capturedIm = captureScreenArea(pos_x,pos_y,length_x,height_y)
+        extractedText = pytesseract.image_to_string(capturedIm)
+                
+        # Online-check from capture and increase counter
+        targetIsOn = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
+        if targetIsOn == True:
+            secondsOn +=1            
+        
         runTime = datetime.now()
         
         timeDif = (runTime - startTime).total_seconds()
@@ -119,15 +121,11 @@ if __name__ == "__main__":
                 
             startTime = runTime
             # remember current time to restart loop till data gets saved again (timeInterval)
-            timeTargetSeenOn = datetime.now() 
-            
-        capturedIm = captureScreenArea(pos_x,pos_y,length_x,height_y)
-        extractedText = pytesseract.image_to_string(capturedIm)
-                
-        # Online-check from capture and increase counter
-        targetIsOn = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
-        if targetIsOn == True:
-            secondsOn +=1
+            timeTargetSeenOn = datetime.now()             
+        
+        if currentTarget != extractedText:
+            currentTarget = extractedText
+            print("Start online tracking of target " + currentTarget + " ...")
         
         # sleep between each check
         time.sleep(1) #seconds
