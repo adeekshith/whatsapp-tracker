@@ -116,7 +116,7 @@ if __name__ == "__main__":
             extractedText = extractedText.replace('\n','')            
             
             if targetOnlineCount != 0:
-                print(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S: ") + extractedText + " " + str(targetOnlineCount))
+                print(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S: ") + extractedText + " " + str(targetOnlineCount) + "/" + str(targetCheckedCount))
             
             writeToDatabase(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText, str(targetOnlineCount), str(targetCheckedCount))
             targetOnlineCount = 0   
@@ -127,6 +127,8 @@ if __name__ == "__main__":
         
         if currentTarget != extractedText:
             currentTarget = extractedText
+            targetOnlineCount = 0 # reset counters after target was switched
+            targetCheckedCount = 0            
             print("Start online tracking of target " + currentTarget + " ...")
         
         # sleep between each check
