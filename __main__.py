@@ -32,15 +32,15 @@ from datetime import datetime
 dbFile = "online.csv"
 
 def captureScreenArea(pos_x, pos_y, length_x, height_y):
-    im=ImageGrab.grab(bbox=(pos_x, pos_y, pos_x + length_x, pos_y + height_y)) # X1,Y1,X2,Y2
-    return im
+    img=ImageGrab.grab(bbox=(pos_x, pos_y, pos_x + length_x, pos_y + height_y)) # X1,Y1,X2,Y2
+    return img
 
-def writeToDatabase(localtime, targetName, secondsCnt):
+def writeToDatabase(localtime, targetName, targetOnlineCount, targetCheckedCount):
     # Open file handle with mode append
     fo = open(dbFile, "a")
     
     #concatenate timestamp, target infos and append to file
-    res = localtime + ";" + str(targetName) + ";" + secondsCnt + "\n" #csv format
+    res = localtime + ";" + str(targetName) + ";" + targetOnlineCount + ";" + targetCheckedCount + "\n" #csv format
     fo.write(res);
     
     # Close file handle
@@ -76,33 +76,35 @@ if __name__ == "__main__":
     # Script start
     
     # CONFIG: Screen dimensions to be captured (modify here)
-    pos_x = 1350        #edit only this if you like top right alignment of WhatsApp Web Application
+    pos_x = 1355        #edit only this if you like top right alignment of WhatsApp Web Application
     pos_y = 35          #aligned top at 1920x1080
     length_x = 400      #length should be big enough for some tolerance in alignment
     height_y = 50       #height of captured screen    
     
     # Debug CONFIG: show screenshot of capture area once script gets started
-    capturedIm = captureScreenArea(pos_x,pos_y,length_x,height_y)
-    currentTarget = pytesseract.image_to_string(capturedIm)
-    capturedIm.show() 
+    capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
+    currentTarget = pytesseract.image_to_string(capturedImg)
+    capturedImg.show() 
     print("Start online tracking of target " + currentTarget + " ...")
 
-    timeInterval = 60 # seconds to save data to db (csv file atm)
+    timeInterval = 600 # seconds to save data to db (csv file atm)
     
-    secondsOn = 0 # Initializing
+    targetOnlineCount = 0 # Initializing
+    targetCheckedCount = 0
     timeTargetSeenOn = datetime.now()
     targetIsOn = False
     startTime = datetime.now()
 
     # Looping continuously to monitor
     while True: 
-        capturedIm = captureScreenArea(pos_x,pos_y,length_x,height_y)
-        extractedText = pytesseract.image_to_string(capturedIm)
+        capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
+        extractedText = pytesseract.image_to_string(capturedImg)
                 
         # Online-check from capture and increase counter
         targetIsOn = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
+        targetCheckedCount +=1
         if targetIsOn == True:
-            secondsOn +=1            
+            targetOnlineCount +=1            
         
         runTime = datetime.now()
         
@@ -113,11 +115,12 @@ if __name__ == "__main__":
             extractedText = extractedText.replace('online','')
             extractedText = extractedText.replace('\n','')            
             
-            if secondsOn != 0:
-                print(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S: ") + extractedText + " " + str(secondsOn))
-                writeToDatabase(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText, str(secondsOn))
-                secondsOn = 0
-                
+            if targetOnlineCount != 0:
+                print(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S: ") + extractedText + " " + str(targetOnlineCount))
+            
+            writeToDatabase(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText, str(targetOnlineCount), str(targetCheckedCount))
+            targetOnlineCount = 0   
+            targetCheckedCount = 0            
             startTime = runTime
             # remember current time to restart loop till data gets saved again (timeInterval)
             timeTargetSeenOn = datetime.now()             
