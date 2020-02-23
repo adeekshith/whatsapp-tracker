@@ -39,11 +39,13 @@ def captureScreenArea(pos_x, pos_y, length_x, height_y):
     return img
 
 def writeCSV(localtime, targetName, targetOnlineCount, targetCheckedCount, timeInterval):
+    targetName = targetName.replace("\n","") #pretty print tesseracted text as targetName
+    printConsole("Write data: " + targetName + ";" + targetOnlineCount + ";" + targetCheckedCount + ";" + timeInterval)
     # Open file handle with mode append
     fo = open(dbFile, "a")
     
     #concatenate timestamp, target infos and append to file
-    res = localtime + ";" + str(targetName) + ";" + targetOnlineCount + ";" + targetCheckedCount + ";" + timeInterval +"\n" #csv format
+    res = localtime + ";" + targetName + ";" + targetOnlineCount + ";" + targetCheckedCount + ";" + timeInterval +"\n" #csv format
     fo.write(res);
     
     # Close file handle
