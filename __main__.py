@@ -26,13 +26,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # use pip install for missing modules
-import pyscreenshot as ImageGrab
-import pytesseract as Tesseract
+
+#system imports
+import re
 import time
 from datetime import datetime
-import re
 
+#third party imports
+import pyscreenshot as ImageGrab
+import pytesseract as Tesseract
+
+#initialize global vars
 dbFile = "online.csv"
+targetOnlineCount = 0
+timeInterval = datetime.now()
+targetWasOn = False
+currentTarget = ""
+nextTarget = ""
 
 def captureScreenArea(pos_x, pos_y, length_x, height_y):
     img=ImageGrab.grab(bbox=(pos_x, pos_y, pos_x + length_x, pos_y + height_y)) # X1,Y1,X2,Y2
@@ -105,16 +115,27 @@ def sanitizeTargetName(targetName):
         
     return targetName
     
+def resetInterval():
+    global timeInterval, targetOnlineCount, currentTarget
+    timeDifIt = (datetime.now() - timeInterval).total_seconds()
+    writeCSV(currentTarget, str(targetWasOn), str(round(timeDifIt)))
+    currentTarget = nextTarget
+    # reset counters and timer after target was switched
+    targetOnlineCount = 0
+    timeInterval = datetime.now()
+    return
+    
 if __name__ == "__main__":   
     # CONFIG: Screen dimensions to be captured (modify here)
     pos_x = 1355        #edit only this if you like top right alignment of WhatsApp Web Application
     pos_y = 35          #aligned top at 1920x1080
     length_x = 400      #length should be big enough for some tolerance in alignment
-    height_y = 50       #height of captured screen    
+    height_y = 50       #height of captured screen
+    writeInterval = 0   #optional: interval in seconds to force write
     
     # Initializing target
     targetOnlineCount = 0
-    timeTargetSeenOn = datetime.now()
+    timeInterval = datetime.now()
 
     # Debug CONFIG:
     printConsole("Tesseract " + str(Tesseract.get_tesseract_version()) + " found")
@@ -138,7 +159,7 @@ if __name__ == "__main__":
         if len(extractedText) == 0: #add some error handling
             printConsole("DEBUG: Cant find text in captured image")
             targetOnlineCount = 0
-            timeTargetSeenOn = now
+            timeInterval = now
             time.sleep(0.5)            
             continue
             
@@ -147,13 +168,16 @@ if __name__ == "__main__":
             
         # Switch target
         if currentTarget != nextTarget:
-            timeDif = (now - timeTargetSeenOn).total_seconds()
             printConsole("Switch from '"+currentTarget+"' to new target '"+nextTarget+"'")
-            writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
-            currentTarget = nextTarget
-            # reset counters and timer after target was switched
-            targetOnlineCount = 0
-            timeTargetSeenOn = now
+            resetInterval()
+            continue
+            
+        #Interval reset
+        if writeInterval != 0:
+            timeDifInterval = (now - timeInterval).total_seconds()
+            if timeDifInterval > writeInterval:
+                printConsole("Interval " + str(writeInterval) + " reached")
+                resetInterval()
             continue
         
         # Online-check from capture and increase counter
@@ -163,13 +187,13 @@ if __name__ == "__main__":
             targetOnlineCount +=1            
             if targetOnlineCount == 1:
                 # target seen online first time
-                timeTargetSeenOn = now  
-                printConsole(currentTarget + " online at " + timeTargetSeenOn.strftime("%H:%M:%S"))
+                timeInterval = now  
+                printConsole(currentTarget + " online")
                 writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
         else:
             if targetOnlineCount > 1:
                 # target was online and seems offline now, write to file and reset
-                timeDif = (now - timeTargetSeenOn).total_seconds()
+                timeDif = (now - timeInterval).total_seconds()
                 printConsole(currentTarget + " now offline ("+str(round(timeDif))+"s online seen)") 
                 writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
                 targetOnlineCount = 0                
