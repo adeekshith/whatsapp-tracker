@@ -27,8 +27,7 @@
 
 # use pip install for missing modules
 import pyscreenshot as ImageGrab
-#from PIL import Image
-import pytesseract
+import pytesseract as Tesseract
 import time
 from datetime import datetime
 
@@ -98,20 +97,20 @@ if __name__ == "__main__":
     timeInterval = 600 # seconds to save data to db (csv file atm)
 
     # Debug CONFIG:
-    printConsole("Tesseract " + str(pytesseract.get_tesseract_version()) + " found")
+    printConsole("Tesseract " + str(Tesseract.get_tesseract_version()) + " found")
     printConsole("Interval " + str(timeInterval) + "s set")
     printConsole("Test capture screen area... ")
     capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
     printConsole("Capture screen area done! Show image...")
     capturedImg.show() 
     printConsole("Throw Tesseract on capture image")
-    currentTarget = pytesseract.image_to_string(capturedImg)
+    currentTarget = Tesseract.image_to_string(capturedImg)
     printConsole("Start online tracking of target " + currentTarget + " ...")
     
     # Looping continuously to monitor
     while True: 
         capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
-        extractedText = pytesseract.image_to_string(capturedImg)
+        extractedText = Tesseract.image_to_string(capturedImg)
                 
         # Online-check from capture and increase counter
         targetIsOn = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
