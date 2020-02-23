@@ -27,7 +27,7 @@
 
 # use pip install for missing modules
 import pyscreenshot as ImageGrab
-from PIL import Image
+#from PIL import Image
 import pytesseract
 import time
 from datetime import datetime
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         if currentTarget != extractedText:
             printConsole("Switch from "+currentTarget+" to "+extractedText+" ("+str(targetOnlineCount) + "/" + str(targetCheckedCount)+")")
             # write current data
-            writeCSV(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText, str(targetOnlineCount), str(targetCheckedCount), str(round(timeDif)))
+            writeCSV(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), currentTarget, str(targetOnlineCount), str(targetCheckedCount), str(round(timeDif)))
             currentTarget = extractedText
             # reset counters and timer after target was switched
             targetOnlineCount = 0
