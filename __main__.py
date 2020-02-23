@@ -36,7 +36,14 @@ from datetime import datetime
 import pyscreenshot as ImageGrab
 import pytesseract as Tesseract
 
-#initialize global vars
+# CONFIG: Screen dimensions to be captured (modify here)
+POS_X = 1355        #edit only this if you like top right alignment of WhatsApp Web Application
+POS_Y = 35          #aligned top at 1920x1080
+LENGTH_X = 400      #length should be big enough for some tolerance in alignment
+HEIGHT_Y = 50       #height of captured screen
+WRITE_INTERVAL = 0  #optional: interval in seconds to force write
+
+#initialize global vars (does not need modification)
 dbFile = "online.csv"
 targetOnlineCount = 0
 timeInterval = datetime.now()
@@ -44,8 +51,8 @@ targetWasOn = False
 currentTarget = ""
 nextTarget = ""
 
-def captureScreenArea(pos_x, pos_y, length_x, height_y):
-    img=ImageGrab.grab(bbox=(pos_x, pos_y, pos_x + length_x, pos_y + height_y)) # X1,Y1,X2,Y2
+def captureScreenArea(POS_X, POS_Y, LENGTH_X, HEIGHT_Y):
+    img=ImageGrab.grab(bbox=(POS_X, POS_Y, POS_X + LENGTH_X, POS_Y + HEIGHT_Y)) # X1,Y1,X2,Y2
     return img
 
 def writeCSV(targetName, onlineState, timeDif):
@@ -125,22 +132,11 @@ def resetInterval():
     timeInterval = datetime.now()
     return
     
-if __name__ == "__main__":   
-    # CONFIG: Screen dimensions to be captured (modify here)
-    pos_x = 1355        #edit only this if you like top right alignment of WhatsApp Web Application
-    pos_y = 35          #aligned top at 1920x1080
-    length_x = 400      #length should be big enough for some tolerance in alignment
-    height_y = 50       #height of captured screen
-    writeInterval = 0   #optional: interval in seconds to force write
-    
-    # Initializing target
-    targetOnlineCount = 0
-    timeInterval = datetime.now()
-
+if __name__ == "__main__":    
     # Debug CONFIG:
     printConsole("Tesseract " + str(Tesseract.get_tesseract_version()) + " found")
     printConsole("Test capture screen area... ")
-    capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
+    capturedImg = captureScreenArea(POS_X,POS_Y,LENGTH_X,HEIGHT_Y)
     printConsole("Capture screen area done! Show image...")
     capturedImg.show() 
     printConsole("Throw Tesseract on capture image")
@@ -151,7 +147,7 @@ if __name__ == "__main__":
     
     # Looping continuously to monitor
     while True: 
-        capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
+        capturedImg = captureScreenArea(POS_X,POS_Y,LENGTH_X,HEIGHT_Y)
         extractedText = Tesseract.image_to_string(capturedImg)
         targetWasOn = targetIsOn                     
         now = datetime.now()        
@@ -173,10 +169,10 @@ if __name__ == "__main__":
             continue
             
         #Interval reset
-        if writeInterval != 0:
+        if WRITE_INTERVAL != 0:
             timeDifInterval = (now - timeInterval).total_seconds()
-            if timeDifInterval > writeInterval:
-                printConsole("Interval " + str(writeInterval) + " reached")
+            if timeDifInterval > WRITE_INTERVAL:
+                printConsole("Interval " + str(WRITE_INTERVAL) + " reached")
                 resetInterval()
             continue
         
@@ -198,5 +194,5 @@ if __name__ == "__main__":
                 writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
                 targetOnlineCount = 0                
         
-        # sleep between each check
+        # sleep between each check (modify for your needs... check performance)
         time.sleep(0.2) #seconds
