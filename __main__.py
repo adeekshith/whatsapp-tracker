@@ -31,17 +31,19 @@
 import re
 import time
 from datetime import datetime
+from pathlib import Path
+import os
 
 #third party imports
 import pyscreenshot as ImageGrab
 import pytesseract as Tesseract
 
 # CONFIG: Screen dimensions to be captured (modify here)
-POS_X = 1355        #edit only this if you like top right alignment of WhatsApp Web Application
-POS_Y = 35          #aligned top at 1920x1080
-LENGTH_X = 400      #length should be big enough for some tolerance in alignment
-HEIGHT_Y = 50       #height of captured screen
-WRITE_INTERVAL = 0  #optional: interval in seconds to force write
+POS_X = 1355            #edit only this if you like top right alignment of WhatsApp Web Application
+POS_Y = 35              #aligned top at 1920x1080
+LENGTH_X = 400          #length should be big enough for some tolerance in alignment
+HEIGHT_Y = 54           #height of captured screen
+WRITE_INTERVAL = 600    #optional: interval in seconds to force write
 
 #initialize global vars (does not need modification)
 dbFile = "online.csv"
@@ -54,20 +56,31 @@ nextTarget = ""
 def captureScreenArea():
     img=ImageGrab.grab(bbox=(POS_X, POS_Y, POS_X + LENGTH_X, POS_Y + HEIGHT_Y)) # X1,Y1,X2,Y2
     return img
-
+    
 def writeCSV(targetName, onlineState, timeDif):
     targetName = targetName.replace("\n","") #pretty print tesseracted text as targetName
-    # Open file handle with mode append
-    fo = open(dbFile, "a")
     
-    #concatenate timestamp, target infos and append to file
-    printConsole("Write data: " + targetName + ";" + onlineState + ";" + timeDif)
-    now = datetime.now()
-    res = now.strftime("%d-%m-%Y") + ";" + now.strftime("%H:%M:%S") + ";" + targetName + ";" + onlineState + ";" + timeDif +"\n" #csv format
-    fo.write(res);
+    try:
+        size = os.path.getsize(dbFile)
     
-    # Close file handle
-    fo.close()
+        # Open file handle with mode append  
+        fo = open(dbFile, "a")
+        #concatenate timestamp, target infos and append to file
+        printConsole("Write data: " + targetName + ";" + onlineState + ";" + timeDif)
+        now = datetime.now()
+        res = now.strftime("%d-%m-%Y") + ";" + now.strftime("%H:%M:%S") + ";" + targetName + ";" + onlineState + ";" + timeDif +"\n" #csv format
+        fo.write(res);
+        fo.close()     
+    except (OSError, IOError) as e:
+        printConsole("DEBUG: " + str(e))
+        printConsole("Try to create dbFile with headline...")
+        #create file with headline
+        with open(dbFile, 'w') as fo:
+            res = "date;time;target;online;seconds\n"
+            fo.write(res)
+        fo.close()      
+        printConsole("dbFile created successful as " + dbFile)
+
     return
 
 def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
@@ -124,8 +137,9 @@ def sanitizeTargetName(targetName):
     
 def resetInterval():
     global timeInterval, targetOnlineCount, currentTarget
-    timeDifIt = (datetime.now() - timeInterval).total_seconds()
-    writeCSV(currentTarget, str(targetWasOn), str(round(timeDifIt)))
+    if currentTarget != "":
+        timeDifIt = (datetime.now() - timeInterval).total_seconds()
+        writeCSV(currentTarget, str(targetWasOn), str(round(timeDifIt)))
     currentTarget = nextTarget
     # reset counters and timer after target was switched
     targetOnlineCount = 0
@@ -154,8 +168,8 @@ if __name__ == "__main__":
         
         if len(extractedText) == 0: #add some error handling
             printConsole("DEBUG: Cant find text in captured image")
-            targetOnlineCount = 0
-            timeInterval = now
+            currentTarget = ""
+            resetInterval()
             time.sleep(0.5)            
             continue
             
@@ -182,7 +196,7 @@ if __name__ == "__main__":
             #track online time
             targetOnlineCount +=1            
             if targetOnlineCount == 1:
-                # target seen online first time
+                # target is online start stopwatch as timeInterval
                 timeInterval = now  
                 printConsole(currentTarget + " online")
                 writeCSV(currentTarget, "True", "1")
@@ -192,7 +206,7 @@ if __name__ == "__main__":
                 timeDif = (now - timeInterval).total_seconds()
                 printConsole(currentTarget + " now offline ("+str(round(timeDif))+"s online seen)") 
                 writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
-                targetOnlineCount = 0                
-        
+                targetOnlineCount = 0 
+                
         # sleep between each check (modify for your needs... check performance)
         time.sleep(0.2) #seconds
