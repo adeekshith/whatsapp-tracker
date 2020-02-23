@@ -30,6 +30,7 @@ import pyscreenshot as ImageGrab
 import pytesseract as Tesseract
 import time
 from datetime import datetime
+import re
 
 dbFile = "online.csv"
 
@@ -83,7 +84,27 @@ def printConsole(strMsg):
     now = datetime.now()
     print(now.strftime("%d-%m-%Y %H:%M:%S: ") + strMsg)
     return
+    
+def santitizeTargetName(targetName):
+    arrTargetText = targetName.split('\n')
+    if len(arrTargetText)>1: #check if a second line was found
+        targetName = arrTargetText[0] #first line is our targetName
+    else:
+        #in all other cases we try to simple string replace with regexp patterns
+        rep_dict = {
+            'klicke hier für Kontaktinfos':'',
+            'Klicke hier fiir Kontaktinfo':'',
+            'klicke hier fur Kontaktinfo':'',
+            'online':'',
+            'anllne':'',
+            'anlme':'',
+            '\n':''
+            }
+        pattern = re.compile("|".join([re.escape(k) for k in sorted(rep_dict,key=len,reverse=True)]), flags=re.DOTALL)
+        targetName = pattern.sub(lambda x: rep_dict[x.group(0)], targetName)
         
+    return targetName
+    
 if __name__ == "__main__":   
     # CONFIG: Screen dimensions to be captured (modify here)
     pos_x = 1355        #edit only this if you like top right alignment of WhatsApp Web Application
@@ -110,14 +131,11 @@ if __name__ == "__main__":
     while True: 
         capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
         extractedText = Tesseract.image_to_string(capturedImg)
-        targetWasOn = targetIsOn             
-        targetIsOn = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
+        targetWasOn = targetIsOn                     
         now = datetime.now()
         
-        #Sanitize target name
-        extractedText = extractedText.replace('online','')
-        extractedText = extractedText.replace('online','')
-        extractedText = extractedText.replace('\n','')   
+        #Sanitize target name (todo: language)
+        nextTarget = santitizeTargetName(extractedText)
         
         if len(extractedText) == 0: #add some error handling
             printConsole("DEBUG: Cant find text in captured image")
@@ -127,33 +145,33 @@ if __name__ == "__main__":
             continue
             
         # Switch target
-        if currentTarget != extractedText:
+        if currentTarget != nextTarget:
             timeDif = (now - timeTargetSeenOn).total_seconds()
-            if round(timeDif) > 4: #waiting for contact infos...
-                printConsole("Switch from "+currentTarget+" to new target "+extractedText+", force write data")
-                writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
-                currentTarget = extractedText
-                # reset counters and timer after target was switched
-                targetOnlineCount = 0
-                timeTargetSeenOn = now
-                continue
+            printConsole("Switch from '"+currentTarget+"' to new target '"+nextTarget+"'")
+            writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
+            currentTarget = nextTarget
+            # reset counters and timer after target was switched
+            targetOnlineCount = 0
+            timeTargetSeenOn = now
+            continue
         
         # Online-check from capture and increase counter
+        targetIsOn = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
         if targetIsOn == True:            
             #track online time
             targetOnlineCount +=1            
             if targetOnlineCount == 1:
                 # target seen online first time
                 timeTargetSeenOn = now  
-                printConsole(extractedText + " online at " + timeTargetSeenOn.strftime("%H:%M:%S"))
-                writeCSV(extractedText, str(targetIsOn), str(round(timeDif)))
+                printConsole(currentTarget + " online at " + timeTargetSeenOn.strftime("%H:%M:%S"))
+                writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
         else:
             if targetOnlineCount > 1:
                 # target was online and seems offline now, write to file and reset
                 timeDif = (now - timeTargetSeenOn).total_seconds()
-                printConsole(extractedText + " now offline ("+str(round(timeDif))+"s online seen)") 
-                writeCSV(extractedText, str(targetWasOn), str(round(timeDif)))
+                printConsole(currentTarget + " now offline ("+str(round(timeDif))+"s online seen)") 
+                writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
                 targetOnlineCount = 0                
         
         # sleep between each check
-        time.sleep(1) #seconds
+        time.sleep(0.2) #seconds
