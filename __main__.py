@@ -146,7 +146,7 @@ if __name__ == "__main__":
                 # target seen online, write to file
                 timeTargetSeenOn = now  
                 printConsole(extractedText + " online at " + timeTargetSeenOn.strftime("%H:%M:%S"))                  
-                writeCSV(textractedText, str(targetIsOn), str(targetOnlineCount))                     
+                writeCSV(extractedText, str(targetIsOn), str(targetOnlineCount))                     
         else:
             if targetOnlineCount > 1:
                 # target was online and seems offline now, write to file and reset
