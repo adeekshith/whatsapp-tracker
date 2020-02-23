@@ -104,12 +104,13 @@ if __name__ == "__main__":
     printConsole("Throw Tesseract on capture image")
     currentTarget = Tesseract.image_to_string(capturedImg)
     printConsole("Start online tracking of target " + currentTarget + " ...")
+    targetIsOn = checkIfOnlineFromExtractedtext(currentTarget, accuracyThreshold = 0.3)
     
     # Looping continuously to monitor
     while True: 
         capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
         extractedText = Tesseract.image_to_string(capturedImg)
-                        
+        targetWasOn = targetIsOn             
         targetIsOn = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
         now = datetime.now()
         
@@ -131,7 +132,7 @@ if __name__ == "__main__":
             if round(timeDif) > 4: #waiting for contact infos...
                 printConsole("Switch from "+currentTarget+" to new target "+extractedText)
                 # write current data
-                writeCSV(currentTarget, str(targetIsOn), str(round(timeDif)))
+                writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
                 currentTarget = extractedText
                 # reset counters and timer after target was switched
                 targetOnlineCount = 0
@@ -143,10 +144,10 @@ if __name__ == "__main__":
             #track online time
             targetOnlineCount +=1            
             if targetOnlineCount == 1:
-                # target seen online, write to file
+                # target seen online first time
                 timeTargetSeenOn = now  
-                printConsole(extractedText + " online at " + timeTargetSeenOn.strftime("%H:%M:%S"))                  
-                writeCSV(extractedText, str(targetIsOn), str(targetOnlineCount))                     
+                printConsole(extractedText + " online at " + timeTargetSeenOn.strftime("%H:%M:%S"))
+                writeCSV(extractedText, str(targetIsOn), str(targetOnlineCount)) 
         else:
             if targetOnlineCount > 1:
                 # target was online and seems offline now, write to file and reset
