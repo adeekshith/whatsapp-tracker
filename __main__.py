@@ -130,8 +130,7 @@ if __name__ == "__main__":
         if currentTarget != extractedText:
             timeDif = (now - timeTargetSeenOn).total_seconds()
             if round(timeDif) > 4: #waiting for contact infos...
-                printConsole("Switch from "+currentTarget+" to new target "+extractedText)
-                # write current data
+                printConsole("Switch from "+currentTarget+" to new target "+extractedText+", force write data")
                 writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
                 currentTarget = extractedText
                 # reset counters and timer after target was switched
@@ -147,7 +146,6 @@ if __name__ == "__main__":
                 # target seen online first time
                 timeTargetSeenOn = now  
                 printConsole(extractedText + " online at " + timeTargetSeenOn.strftime("%H:%M:%S"))
-                writeCSV(extractedText, str(targetIsOn), str(targetOnlineCount)) 
         else:
             if targetOnlineCount > 1:
                 # target was online and seems offline now, write to file and reset
