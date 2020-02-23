@@ -37,14 +37,15 @@ def captureScreenArea(pos_x, pos_y, length_x, height_y):
     img=ImageGrab.grab(bbox=(pos_x, pos_y, pos_x + length_x, pos_y + height_y)) # X1,Y1,X2,Y2
     return img
 
-def writeCSV(localtime, targetName, targetOnlineCount, targetCheckedCount, timeInterval):
+def writeCSV(targetName, onlineState, timeDif):
     targetName = targetName.replace("\n","") #pretty print tesseracted text as targetName
-    printConsole("Write data: " + targetName + ";" + targetOnlineCount + ";" + targetCheckedCount + ";" + timeInterval)
     # Open file handle with mode append
     fo = open(dbFile, "a")
     
     #concatenate timestamp, target infos and append to file
-    res = localtime + ";" + targetName + ";" + targetOnlineCount + ";" + targetCheckedCount + ";" + timeInterval +"\n" #csv format
+    printConsole("Write data: " + targetName + ";" + onlineState + ";" + timeDif)
+    now = datetime.now()
+    res = now.strftime("%d-%m-%Y") + ";" + now.strftime("%H:%M:%S") + ";" + targetName + ";" + onlineState + ";" + timeDif +"\n" #csv format
     fo.write(res);
     
     # Close file handle
@@ -60,16 +61,18 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
     maxScore += thisScoreWeight
     if "anllne" in extractedText or "anlme" in extractedText or "online" in extractedText:
         score += thisScoreWeight
-
+        
     # Test 2 which assumes that the second line 
     # in the extracted OCR text is "online"
     # This method works when the OCR algorithm 
     # does not perform well. This is usually the case.
     thisScoreWeight = 2
     maxScore += thisScoreWeight
-    if len(extractedText.split('\n'))>1:
-        score += thisScoreWeight
-
+    arrText = extractedText.split('\n')
+    if len(extractedText.split('\n'))>1: #this should be the second line
+        if len(arrText[1]) <= 8 and len(arrText[1]) >= 4: #this should be "online" (todo: impl other lang)
+            score += thisScoreWeight    
+        
     isOnlineAccuracy = score/maxScore
     if isOnlineAccuracy >= accuracyThreshold:
         return True
@@ -77,28 +80,23 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
         return False
 
 def printConsole(strMsg):
-    print(datetime.now().strftime("%d-%m-%Y %H:%M:%S: ") + strMsg)
+    now = datetime.now()
+    print(now.strftime("%d-%m-%Y %H:%M:%S: ") + strMsg)
     return
         
-if __name__ == "__main__":
-    # Script start
-    
+if __name__ == "__main__":   
     # CONFIG: Screen dimensions to be captured (modify here)
     pos_x = 1355        #edit only this if you like top right alignment of WhatsApp Web Application
     pos_y = 35          #aligned top at 1920x1080
     length_x = 400      #length should be big enough for some tolerance in alignment
     height_y = 50       #height of captured screen    
-        
-    targetOnlineCount = 0 # Initializing
-    targetCheckedCount = 0
+    
+    # Initializing target
+    targetOnlineCount = 0
     timeTargetSeenOn = datetime.now()
-    targetIsOn = False
-    startTime = datetime.now()    
-    timeInterval = 600 # seconds to save data to db (csv file atm)
 
     # Debug CONFIG:
     printConsole("Tesseract " + str(Tesseract.get_tesseract_version()) + " found")
-    printConsole("Interval " + str(timeInterval) + "s set")
     printConsole("Test capture screen area... ")
     capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
     printConsole("Capture screen area done! Show image...")
@@ -111,42 +109,51 @@ if __name__ == "__main__":
     while True: 
         capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
         extractedText = Tesseract.image_to_string(capturedImg)
-                
-        # Online-check from capture and increase counter
+                        
         targetIsOn = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
-        targetCheckedCount +=1
-        if targetIsOn == True:
-            targetOnlineCount +=1            
+        now = datetime.now()
         
-        runTime = datetime.now()
+        #Sanitize target name
+        extractedText = extractedText.replace('online','')
+        extractedText = extractedText.replace('online','')
+        extractedText = extractedText.replace('\n','')   
         
-        timeDif = (runTime - startTime).total_seconds()
-        if timeDif > timeInterval:            
-            #Log Name and Counter in a single line
-            extractedText = extractedText.replace('online','')
-            extractedText = extractedText.replace('online','')
-            extractedText = extractedText.replace('\n','')            
-            
-            if targetOnlineCount != 0:
-                printConsole(extractedText + " seen at " + timeTargetSeenOn.strftime("%H:%M:%S") + " " + str(targetOnlineCount) + "/" + str(targetCheckedCount))
-            
-            writeCSV(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText, str(targetOnlineCount), str(targetCheckedCount), str(timeInterval))
+        if len(extractedText) == 0: #add some error handling
+            printConsole("DEBUG: Cant find text in captured image")
             targetOnlineCount = 0
-            targetCheckedCount = 0 
-            startTime = runTime  
-            # remember current time to restart loop till data gets saved again (timeInterval)
-            timeTargetSeenOn = datetime.now()             
-        
+            timeTargetSeenOn = now
+            time.sleep(0.5)            
+            continue
+            
+        # Switch target
         if currentTarget != extractedText:
-            printConsole("Switch from "+currentTarget+" to "+extractedText+" ("+str(targetOnlineCount) + "/" + str(targetCheckedCount)+")")
-            # write current data
-            writeCSV(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), currentTarget, str(targetOnlineCount), str(targetCheckedCount), str(round(timeDif)))
-            currentTarget = extractedText
-            # reset counters and timer after target was switched
-            targetOnlineCount = 0
-            targetCheckedCount = 0 
-            startTime = runTime          
-            printConsole("Start online tracking of target " + currentTarget + " ...")
+            timeDif = (now - timeTargetSeenOn).total_seconds()
+            if round(timeDif) > 4: #waiting for contact infos...
+                printConsole("Switch from "+currentTarget+" to new target "+extractedText)
+                # write current data
+                writeCSV(currentTarget, str(targetIsOn), str(round(timeDif)))
+                currentTarget = extractedText
+                # reset counters and timer after target was switched
+                targetOnlineCount = 0
+                timeTargetSeenOn = now
+                continue
+        
+        # Online-check from capture and increase counter
+        if targetIsOn == True:            
+            #track online time
+            targetOnlineCount +=1            
+            if targetOnlineCount == 1:
+                # target seen online, write to file
+                timeTargetSeenOn = now  
+                printConsole(extractedText + " online at " + timeTargetSeenOn.strftime("%H:%M:%S"))                  
+                writeCSV(textractedText, str(targetIsOn), str(targetOnlineCount))                     
+        else:
+            if targetOnlineCount > 1:
+                # target was online and seems offline now, write to file and reset
+                timeDif = (now - timeTargetSeenOn).total_seconds()
+                printConsole(extractedText + " now offline ("+str(round(timeDif))+"s online seen)") 
+                writeCSV(extractedText, str(targetIsOn), str(round(timeDif)))
+                targetOnlineCount = 0                
         
         # sleep between each check
         time.sleep(1) #seconds
