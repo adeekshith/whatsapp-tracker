@@ -70,8 +70,8 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
     thisScoreWeight = 2
     maxScore += thisScoreWeight
     arrText = extractedText.split('\n')
-    if len(extractedText.split('\n'))>1: #this should be the second line
-        if len(arrText[1]) <= 8 and len(arrText[1]) >= 4: #this should be "online" (todo: impl other lang)
+    if len(arrText)>1: #check status line is set
+        if len(arrText[1]) <= 8 and len(arrText[1]) >= 4: #this should be "online" (todo: impl other lang. a word 4-8 chars will result true is not great)
             score += thisScoreWeight    
         
     isOnlineAccuracy = score/maxScore
@@ -85,7 +85,7 @@ def printConsole(strMsg):
     print(now.strftime("%d-%m-%Y %H:%M:%S: ") + strMsg)
     return
     
-def santitizeTargetName(targetName):
+def sanitizeTargetName(targetName):
     arrTargetText = targetName.split('\n')
     if len(arrTargetText)>1: #check if a second line was found
         targetName = arrTargetText[0] #first line is our targetName
@@ -123,19 +123,17 @@ if __name__ == "__main__":
     printConsole("Capture screen area done! Show image...")
     capturedImg.show() 
     printConsole("Throw Tesseract on capture image")
-    currentTarget = Tesseract.image_to_string(capturedImg)
+    extractedText = Tesseract.image_to_string(capturedImg)
+    currentTarget = sanitizeTargetName(extractedText)
     printConsole("Start online tracking of target " + currentTarget + " ...")
-    targetIsOn = checkIfOnlineFromExtractedtext(currentTarget, accuracyThreshold = 0.3)
+    targetIsOn = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
     
     # Looping continuously to monitor
     while True: 
         capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
         extractedText = Tesseract.image_to_string(capturedImg)
         targetWasOn = targetIsOn                     
-        now = datetime.now()
-        
-        #Sanitize target name (todo: language)
-        nextTarget = santitizeTargetName(extractedText)
+        now = datetime.now()        
         
         if len(extractedText) == 0: #add some error handling
             printConsole("DEBUG: Cant find text in captured image")
@@ -143,6 +141,9 @@ if __name__ == "__main__":
             timeTargetSeenOn = now
             time.sleep(0.5)            
             continue
+            
+        #Sanitize target name (todo: language)
+        nextTarget = sanitizeTargetName(extractedText)
             
         # Switch target
         if currentTarget != nextTarget:
