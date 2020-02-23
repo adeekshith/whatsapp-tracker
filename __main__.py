@@ -5,6 +5,9 @@
 
 # Preconditions Windows:
 # - Install Tesseract for Windows and add to PATH env (https://github.com/UB-Mannheim/tesseract/wiki)
+#   If you don't have tesseract executable in your PATH, include the following:
+#   pytesseract.pytesseract.tesseract_cmd = r'<full_path_to_your_tesseract_executable>'
+#   Example tesseract_cmd = r'C:\Program Files (x86)\Tesseract-OCR\tesseract'
 # - Install Python environment and pip install missing modules (image, pyscreenshot, pytesseract)
 
 # WhatsApp Web Online Tracker monitors WhatsApp users online timings and stores them to database.
@@ -35,12 +38,12 @@ def captureScreenArea(pos_x, pos_y, length_x, height_y):
     img=ImageGrab.grab(bbox=(pos_x, pos_y, pos_x + length_x, pos_y + height_y)) # X1,Y1,X2,Y2
     return img
 
-def writeToDatabase(localtime, targetName, targetOnlineCount, targetCheckedCount):
+def writeCSV(localtime, targetName, targetOnlineCount, targetCheckedCount, timeInterval):
     # Open file handle with mode append
     fo = open(dbFile, "a")
     
     #concatenate timestamp, target infos and append to file
-    res = localtime + ";" + str(targetName) + ";" + targetOnlineCount + ";" + targetCheckedCount + "\n" #csv format
+    res = localtime + ";" + str(targetName) + ";" + targetOnlineCount + ";" + targetCheckedCount + ";" + timeInterval +"\n" #csv format
     fo.write(res);
     
     # Close file handle
@@ -71,7 +74,11 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
         return True
     else:
         return False
-    
+
+def printConsole(strMsg):
+    print(datetime.now().strftime("%d-%m-%Y %H:%M:%S: ") + strMsg)
+    return
+        
 if __name__ == "__main__":
     # Script start
     
@@ -80,21 +87,25 @@ if __name__ == "__main__":
     pos_y = 35          #aligned top at 1920x1080
     length_x = 400      #length should be big enough for some tolerance in alignment
     height_y = 50       #height of captured screen    
-    
-    # Debug CONFIG: show screenshot of capture area once script gets started
-    capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
-    currentTarget = pytesseract.image_to_string(capturedImg)
-    capturedImg.show() 
-    print("Start online tracking of target " + currentTarget + " ...")
-
-    timeInterval = 600 # seconds to save data to db (csv file atm)
-    
+        
     targetOnlineCount = 0 # Initializing
     targetCheckedCount = 0
     timeTargetSeenOn = datetime.now()
     targetIsOn = False
-    startTime = datetime.now()
+    startTime = datetime.now()    
+    timeInterval = 600 # seconds to save data to db (csv file atm)
 
+    # Debug CONFIG:
+    printConsole("Tesseract " + str(pytesseract.get_tesseract_version()) + " found")
+    printConsole("Interval " + str(timeInterval) + "s set")
+    printConsole("Test capture screen area... ")
+    capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
+    printConsole("Capture screen area done! Show image...")
+    capturedImg.show() 
+    printConsole("Throw Tesseract on capture image")
+    currentTarget = pytesseract.image_to_string(capturedImg)
+    printConsole("Start online tracking of target " + currentTarget + " ...")
+    
     # Looping continuously to monitor
     while True: 
         capturedImg = captureScreenArea(pos_x,pos_y,length_x,height_y)
@@ -116,9 +127,9 @@ if __name__ == "__main__":
             extractedText = extractedText.replace('\n','')            
             
             if targetOnlineCount != 0:
-                print(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S: ") + extractedText + " " + str(targetOnlineCount) + "/" + str(targetCheckedCount))
+                printConsole(extractedText + " seen at " + timeTargetSeenOn.strftime("%H:%M:%S") + " " + str(targetOnlineCount) + "/" + str(targetCheckedCount))
             
-            writeToDatabase(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText, str(targetOnlineCount), str(targetCheckedCount))
+            writeCSV(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText, str(targetOnlineCount), str(targetCheckedCount), str(timeInterval))
             targetOnlineCount = 0
             targetCheckedCount = 0 
             startTime = runTime  
@@ -131,7 +142,7 @@ if __name__ == "__main__":
             targetOnlineCount = 0
             targetCheckedCount = 0 
             startTime = runTime          
-            print("Start online tracking of target " + currentTarget + " ...")
+            printConsole("Start online tracking of target " + currentTarget + " ...")
         
         # sleep between each check
         time.sleep(1) #seconds
