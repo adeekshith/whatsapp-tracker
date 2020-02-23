@@ -153,7 +153,7 @@ if __name__ == "__main__":
                 # target was online and seems offline now, write to file and reset
                 timeDif = (now - timeTargetSeenOn).total_seconds()
                 printConsole(extractedText + " now offline ("+str(round(timeDif))+"s online seen)") 
-                writeCSV(extractedText, str(targetIsOn), str(round(timeDif)))
+                writeCSV(extractedText, str(targetWasOn), str(round(timeDif)))
                 targetOnlineCount = 0                
         
         # sleep between each check
