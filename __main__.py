@@ -51,7 +51,7 @@ targetWasOn = False
 currentTarget = ""
 nextTarget = ""
 
-def captureScreenArea(POS_X, POS_Y, LENGTH_X, HEIGHT_Y):
+def captureScreenArea():
     img=ImageGrab.grab(bbox=(POS_X, POS_Y, POS_X + LENGTH_X, POS_Y + HEIGHT_Y)) # X1,Y1,X2,Y2
     return img
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     # Debug CONFIG:
     printConsole("Tesseract " + str(Tesseract.get_tesseract_version()) + " found")
     printConsole("Test capture screen area... ")
-    capturedImg = captureScreenArea(POS_X,POS_Y,LENGTH_X,HEIGHT_Y)
+    capturedImg = captureScreenArea()
     printConsole("Capture screen area done! Show image...")
     capturedImg.show() 
     printConsole("Throw Tesseract on capture image")
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     
     # Looping continuously to monitor
     while True: 
-        capturedImg = captureScreenArea(POS_X,POS_Y,LENGTH_X,HEIGHT_Y)
+        capturedImg = captureScreenArea()
         extractedText = Tesseract.image_to_string(capturedImg)
         targetWasOn = targetIsOn                     
         now = datetime.now()        
