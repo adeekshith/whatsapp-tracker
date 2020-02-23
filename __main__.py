@@ -185,7 +185,7 @@ if __name__ == "__main__":
                 # target seen online first time
                 timeInterval = now  
                 printConsole(currentTarget + " online")
-                writeCSV(currentTarget, str(targetWasOn), "1")
+                writeCSV(currentTarget, "True", "1")
         else:
             if targetOnlineCount > 1:
                 # target was online and seems offline now, write to file and reset
