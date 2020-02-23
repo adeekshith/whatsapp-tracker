@@ -137,6 +137,9 @@ if __name__ == "__main__":
             timeTargetSeenOn = datetime.now()             
         
         if currentTarget != extractedText:
+            printConsole("Switch from "+currentTarget+" to "+extractedText+" ("+str(targetOnlineCount) + "/" + str(targetCheckedCount)+")")
+            # write current data
+            writeCSV(timeTargetSeenOn.strftime("%d-%m-%Y %H:%M:%S"), extractedText, str(targetOnlineCount), str(targetCheckedCount), str(round(timeDif)))
             currentTarget = extractedText
             # reset counters and timer after target was switched
             targetOnlineCount = 0
