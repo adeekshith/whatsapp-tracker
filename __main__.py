@@ -44,12 +44,14 @@ POS_Y = 35              #aligned top at 1920x1080
 LENGTH_X = 400          #length should be big enough for some tolerance in alignment
 HEIGHT_Y = 54           #height of captured screen
 WRITE_INTERVAL = 600    #optional: interval in seconds to force write
+DELAY = 0.5             #sleep between each check (modify for your needs... check performance)
 
 #initialize global vars (does not need modification)
 dbFile = "online.csv"
 targetOnlineCount = 0
 timeInterval = datetime.now()
 targetWasOn = False
+targetIsOn = False
 currentTarget = ""
 nextTarget = ""
 
@@ -96,8 +98,10 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
     # Test 1 using OCR character matching
     thisScoreWeight = 1
     maxScore += thisScoreWeight
-    if "anllne" in extractedText or "anlme" in extractedText or "online" in extractedText:
+    if "anllne" in extractedText or "anlme" in extractedText or "online" in extractedText: 
         score += thisScoreWeight
+        if targetIsOn == False:
+            printConsole("online check 1 success:" + str(score))
         
     # Test 2 which assumes that the second line 
     # in the extracted OCR text is "online"
@@ -107,8 +111,14 @@ def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
     maxScore += thisScoreWeight
     arrText = extractedText.split('\n')
     if len(arrText)>1: #check status line is set
-        if len(arrText[1]) <= 8 and len(arrText[1]) >= 4: #this should be "online" (todo: impl other lang. a word 4-8 chars will result true is not great)
-            score += thisScoreWeight    
+        if len(arrText[1]) <= 8 and len(arrText[1]) >= 3: #this should be "online" (todo: impl other lang. a word 4-8 chars will result true is not great)
+            score += thisScoreWeight 
+            if targetIsOn == False:
+                printConsole("online check 2.1 success:" + str(score))
+        if len(arrText)>2: #third line on android is online (Andyroid VM on big scale settings)
+            score += thisScoreWeight 
+            if targetIsOn == False:
+                printConsole("online check 2.2 success:" + str(score))     
         
     isOnlineAccuracy = score/maxScore
     if isOnlineAccuracy >= accuracyThreshold:
@@ -146,6 +156,8 @@ def resetInterval():
     if currentTarget != "":
         timeDifIt = (datetime.now() - timeInterval).total_seconds()
         writeCSV(currentTarget, str(targetWasOn), str(round(timeDifIt)))
+    if targetWasOn == False and targetIsOn == True: #trigger instant if target comes online
+        writeCSV(currentTarget, str(targetIsOn), "0") #time will count next write      
     currentTarget = nextTarget
     # reset counters and timer after target was switched
     targetOnlineCount = 0
@@ -196,25 +208,13 @@ if __name__ == "__main__":
             if timeDifInterval > WRITE_INTERVAL:
                 printConsole("Interval " + str(WRITE_INTERVAL) + " reached")
                 resetInterval()
-            continue
+                continue
         
-        # Online-check from capture and increase counter
+        # Write data and reset counters on online/offline switch
         targetIsOn = checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold = 0.3)
-        if targetIsOn == True:            
-            #track online time
-            targetOnlineCount +=1            
-            if targetOnlineCount == 1:
-                # target is online start stopwatch as timeInterval
-                timeInterval = now  
-                printConsole(currentTarget + " online")
-                writeCSV(currentTarget, "True", "1")
-        else:
-            if targetOnlineCount > 1:
-                # target was online and seems offline now, write to file and reset
-                timeDif = (now - timeInterval).total_seconds()
-                printConsole(currentTarget + " now offline ("+str(round(timeDif))+"s online seen)") 
-                writeCSV(currentTarget, str(targetWasOn), str(round(timeDif)))
-                targetOnlineCount = 0 
+        if targetIsOn != targetWasOn: #online state toggled
+            resetInterval()
+            continue
                 
-        # sleep between each check (modify for your needs... check performance)
-        time.sleep(0.2) #seconds
+        time.sleep(DELAY) #sleep in seconds
+
