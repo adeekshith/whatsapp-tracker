@@ -56,21 +56,11 @@ nextTarget = ""
 def captureScreenArea():
     img=ImageGrab.grab(bbox=(POS_X, POS_Y, POS_X + LENGTH_X, POS_Y + HEIGHT_Y)) # X1,Y1,X2,Y2
     return img
-    
-def writeCSV(targetName, onlineState, timeDif):
-    targetName = targetName.replace("\n","") #pretty print tesseracted text as targetName
-    
+
+def setupCSV():
     try:
         size = os.path.getsize(dbFile)
-    
-        # Open file handle with mode append  
-        fo = open(dbFile, "a")
-        #concatenate timestamp, target infos and append to file
-        printConsole("Write data: " + targetName + ";" + onlineState + ";" + timeDif)
-        now = datetime.now()
-        res = now.strftime("%d-%m-%Y") + ";" + now.strftime("%H:%M:%S") + ";" + targetName + ";" + onlineState + ";" + timeDif +"\n" #csv format
-        fo.write(res);
-        fo.close()     
+        printConsole("db file with size of " + str(size) + " found")
     except (OSError, IOError) as e:
         printConsole("DEBUG: " + str(e))
         printConsole("Try to create dbFile with headline...")
@@ -79,8 +69,24 @@ def writeCSV(targetName, onlineState, timeDif):
             res = "date;time;target;online;seconds\n"
             fo.write(res)
         fo.close()      
-        printConsole("dbFile created successful as " + dbFile)
-
+        printConsole("dbFile created successful as " + dbFile) 
+        
+    return
+    
+def writeCSV(targetName, onlineState, timeDif):
+    targetName = targetName.replace("\n","") #pretty print tesseracted text as targetName
+    try:
+        # Open file handle with mode append
+        fo = open(dbFile, "a")
+        #concatenate timestamp, target infos and append to file
+        printConsole("Write data: " + targetName + ";" + onlineState + ";" + timeDif)
+        now = datetime.now()
+        res = now.strftime("%d-%m-%Y") + ";" + now.strftime("%H:%M:%S") + ";" + targetName + ";" + onlineState + ";" + timeDif +"\n" #csv format
+        fo.write(res);
+        fo.close()
+    except (OSError, IOError) as e:
+        printConsole("DEBUG: " + str(e))
+        
     return
 
 def checkIfOnlineFromExtractedtext(extractedText, accuracyThreshold=0.5):
@@ -146,7 +152,9 @@ def resetInterval():
     timeInterval = datetime.now()
     return
     
-if __name__ == "__main__":    
+if __name__ == "__main__":
+    setupCSV()
+    
     # Debug CONFIG:
     printConsole("Tesseract " + str(Tesseract.get_tesseract_version()) + " found")
     printConsole("Test capture screen area... ")
