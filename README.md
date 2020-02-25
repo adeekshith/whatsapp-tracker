@@ -18,4 +18,7 @@ Let me warn you not to use this to invade anyone's privacy and use it in your le
 - Each instance can track only single user at a time
 - Each instance needs a dedicated machine or virtual machine to run
 - It uses screen capturing and so it needs to be configured separately for different resolutions.
-- No good documentation... author is lazy/busy.
+
+## Windows Preconditions
+ - Install Tesseract for Windows and add to PATH env (https://github.com/UB-Mannheim/tesseract/wiki)
+ - Install Python environment (3.8.1 tested here) and pip install missing modules (image, pyscreenshot, pytesseract)
